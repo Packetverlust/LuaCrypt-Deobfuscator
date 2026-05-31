@@ -29,25 +29,33 @@ function xor(a, b) {
     return result;
 }
 
-const fkey = content.match(
-    /local\s+gg\s*=\s*\((\d+)-(\d+)\)/
-);
+const keyRegex = /local\s+[A-Za-z_][A-Za-z0-9_]*\s*=\s*\((\d+)-(\d+)\)/g;
+const tableRegex = /local\s+[A-Za-z_][A-Za-z0-9_]*\s*=\s*\{([\s\S]*?)\}/g;
 
-if (!fkey) {
+let keyMatch = null;
+let tempMatch;
+while ((tempMatch = keyRegex.exec(content)) !== null) {
+    keyMatch = tempMatch;
+    break;
+}
+
+if (!keyMatch) {
     throw new Error("Could not find LuaCrypt key.");
 }
 
 const key =
-    Number(fkey[1]) -
-    Number(fkey[2]);
+    Number(keyMatch[1]) -
+    Number(keyMatch[2]);
 
-console.log("Key:", key);
+let tableMatch = null;
+while ((tempMatch = tableRegex.exec(content)) !== null) {
+    if (/\((\d+)-(\d+)\)/.test(tempMatch[1])) {
+        tableMatch = tempMatch;
+        break;
+    }
+}
 
-const ftbl = content.match(
-    /local\s+e\s*=\s*\{([\s\S]*?)\}/
-);
-
-if (!ftbl) {
+if (!tableMatch) {
     throw new Error("Could not find encrypted table.");
 }
 
@@ -56,7 +64,7 @@ const chars = [];
 const regex = /\((\d+)-(\d+)\)/g;
 let match;
 
-while ((match = regex.exec(ftbl[1])) !== null) {
+while ((match = regex.exec(tableMatch[1])) !== null) {
     const value =
         Number(match[1]) -
         Number(match[2]);
